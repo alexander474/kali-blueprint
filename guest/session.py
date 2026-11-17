@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
+import time
 
 RUNTIME = Path(__file__).resolve().parent
 
@@ -42,13 +44,36 @@ def wallpaper(path):
         header = stream.read(8)
     if not (header == b'\x89PNG\r\n\x1a\n' or header.startswith(b'\xff\xd8\xff')):
         raise ValueError('Wallpaper content must be PNG or JPEG')
-    props = command(['xfconf-query', '-c', 'xfce4-desktop', '-l'], capture=True).splitlines()
-    targets = [item for item in props if item.endswith('/last-image') and '/backdrop/' in item]
+    # Xfce autostart can run before xfdesktop has created its monitor properties.
+    targets = []
+    for attempt in range(8):
+        try:
+            props = command(['xfconf-query', '-c', 'xfce4-desktop', '-l'], capture=True).splitlines()
+            targets = [item for item in props if item.endswith('/last-image') and '/backdrop/' in item]
+        except subprocess.CalledProcessError:
+            targets = []
+        if targets:
+            break
+        if attempt < 7:
+            time.sleep(1)
     if not targets:
         raise ValueError('No active Xfce wallpaper properties; keep the existing background')
     for prop in targets:
         command(['xfconf-query', '-c', 'xfce4-desktop', '-p', prop, '-s', str(path)])
     command(['xfdesktop', '--reload'])
+
+
+def apply_background(home, state):
+    personal = home / '.config/kali-blueprint/personal.json'
+    if personal.exists():
+        settings = json.loads(personal.read_text())
+        if set(settings) != {'wallpaper'}:
+            raise ValueError('Personal settings currently support only a local wallpaper path')
+        wallpaper(Path(settings['wallpaper']))
+    elif not state.get('bundled_wallpaper_applied', False):
+        wallpaper(RUNTIME / 'wallpaper.png')
+        state['bundled_wallpaper_applied'] = True
+    # Subsequent logins preserve a wallpaper chosen through Xfce Settings.
 
 
 def main():
@@ -81,12 +106,10 @@ def main():
     if existing.returncode != 0 or existing.stdout.strip() in {'xfce4-screenshooter', 'xfce4-screenshooter -f'}:
         command(['xfconf-query', '-c', 'xfce4-keyboard-shortcuts', '-p', shortcut,
                  '-n', '-t', 'string', '-s', 'flameshot gui'])
-    personal = home / '.config/kali-blueprint/personal.json'
-    if personal.exists():
-        settings = json.loads(personal.read_text())
-        if set(settings) != {'wallpaper'}:
-            raise ValueError('Personal settings currently support only a local wallpaper path')
-        wallpaper(Path(settings['wallpaper']))
+    try:
+        apply_background(home, state)
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        print(f'Wallpaper setup deferred: {error}', file=sys.stderr)
     statepath.parent.mkdir(parents=True, exist_ok=True)
     statepath.write_text(json.dumps(state, indent=2) + '\n')
     running = subprocess.run(['pgrep', '-u', str(os.getuid()), '-x', 'conky'],

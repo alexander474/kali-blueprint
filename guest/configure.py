@@ -43,7 +43,7 @@ def main():
                     'RemainAfterExit=yes\n[Install]\nWantedBy=multi-user.target\n')
     subprocess.run(['systemctl', 'enable', 'kali-blueprint-initialize.service'], check=True)
     Path('/etc/machine-id').write_text('')
-    print('Personal defaults installed; SSH remains disabled; no private wallpaper or credentials enrolled.')
+    print('Desktop defaults and bundled wallpaper installed; SSH disabled; no personal credentials enrolled.')
 
 
 if __name__ == '__main__':

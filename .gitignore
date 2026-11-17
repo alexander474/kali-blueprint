@@ -1,6 +1,7 @@
 /.build/
 /dist/
 /.local/
+CLAUDE.local.md
 __pycache__/
 *.pyc
 *.ovpn
