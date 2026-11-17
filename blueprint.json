@@ -1,0 +1,16 @@
+{
+  "upstream_commit": "75a7de76f8fe30cd75b4a46633c4de893dfe19bc",
+  "hostname": "kali",
+  "username": "kali",
+  "keyboard": "no",
+  "timezone": "Europe/Oslo",
+  "locale": "en_US.UTF-8",
+  "disk_gb": 150,
+  "autologin": true,
+  "clipboard": true,
+  "extra_packages": ["conky-std", "flameshot", "openssh-server", "python3"],
+  "profiles": {
+    "Desktop": {"cpus": 8, "memory_mb": 12288},
+    "Work": {"cpus": 4, "memory_mb": 8192}
+  }
+}

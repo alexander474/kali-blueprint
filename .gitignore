@@ -1,0 +1,16 @@
+/.build/
+/dist/
+/.local/
+__pycache__/
+*.pyc
+*.ovpn
+*.pem
+*.key
+.env
+.env.*
+*.vmdk
+*.vmem
+*.vmsn
+*.vmss
+*.7z*
+*.zip
