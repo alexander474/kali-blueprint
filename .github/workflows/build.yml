@@ -1,0 +1,64 @@
+name: Kali Blueprint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blueprint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          persist-credentials: false
+      - name: Validate source and configuration
+        run: python3 build.py --validate
+      - name: Parse Windows helpers
+        shell: pwsh
+        run: |
+          Get-ChildItem -LiteralPath . -Filter '*.ps1' | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$tokens,[ref]$errors)
+            if ($errors.Count) { throw ($errors -join "`n") }
+          }
+
+  build:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          persist-credentials: false
+      - name: Prepare the disposable build runner
+        run: |
+          test -c /dev/kvm
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/dotnet
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends 7zip
+          df -h .
+      - name: Build the standard Kali image with personal defaults
+        run: python3 build.py
+      - name: Create a draft download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          gh release create "$tag" dist/* --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" --draft --title "Kali Blueprint $tag" \
+            --notes 'Built by GitHub Actions. Extract all archive parts together. Initial credentials: kali / kali; change the password before connecting a lab VPN. Native VMware, input-device, SSH and VPN checks remain local.'
