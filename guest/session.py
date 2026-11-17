@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Apply user defaults inside the real Xfce session and preserve user edits."""
 import configparser
 import hashlib
 import json
@@ -28,7 +27,7 @@ def managed(path, content, state):
             state[key] = digest
             return
         if current != state.get(key):
-            return  # An existing personal file is not ours to replace.
+            return
         backup = path.with_name(path.name + '.before-' + current[:12])
         if not backup.exists():
             shutil.copyfile(path, backup)
@@ -44,7 +43,6 @@ def wallpaper(path):
         header = stream.read(8)
     if not (header == b'\x89PNG\r\n\x1a\n' or header.startswith(b'\xff\xd8\xff')):
         raise ValueError('Wallpaper content must be PNG or JPEG')
-    # Xfce autostart can run before xfdesktop has created its monitor properties.
     targets = []
     for attempt in range(8):
         try:
@@ -73,7 +71,6 @@ def apply_background(home, state):
     elif not state.get('bundled_wallpaper_applied', False):
         wallpaper(RUNTIME / 'wallpaper.png')
         state['bundled_wallpaper_applied'] = True
-    # Subsequent logins preserve a wallpaper chosen through Xfce Settings.
 
 
 def main():

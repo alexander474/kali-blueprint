@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Display local guest addresses without contacting an external service."""
 import json
 import subprocess
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Configure the image filesystem; never enroll personal credentials."""
 import json
 import os
 from pathlib import Path
@@ -13,7 +12,8 @@ def main():
     config = json.loads(Path('/etc/kali-blueprint/config.json').read_text())
     account = pwd.getpwnam(config['username'])
     home = Path(account.pw_dir)
-    for relative in ('Kali/notes', 'Kali/work', 'Kali/evidence', 'Pictures/Wallpapers',
+    for relative in ('Kali', 'Kali/notes', 'Kali/work', 'Kali/evidence',
+                     'Pictures', 'Pictures/Wallpapers', '.config',
                      '.config/autostart', '.config/kali-blueprint'):
         path = home / relative
         path.mkdir(parents=True, exist_ok=True)
@@ -29,7 +29,6 @@ def main():
         lightdm.parent.mkdir(parents=True, exist_ok=True)
         lightdm.write_text('[Seat:*]\nautologin-user=' + config['username'] + '\nautologin-user-timeout=0\n')
     subprocess.run(['systemctl', 'disable', 'ssh.service', 'ssh.socket'], check=True)
-    # The upstream image cleanup removes SSH host keys. Regenerate per imported VM.
     init = Path('/usr/local/lib/kali-blueprint/initialize.sh')
     init.write_text('#!/bin/sh\nset -eu\nssh-keygen -A\n'
                     'install -d -m 700 /var/lib/kali-blueprint\n'
