@@ -1,30 +1,25 @@
 # Kali Blueprint
 
-My Kali Linux VM for VMware, with Xfce, the standard Kali tools, Norwegian keyboard and a ready-made desktop.
+A Kali Linux VM for VMware, with Xfce, standard Kali tools, Norwegian keyboard and a custom desktop.
 
-## Get started
+## Start
 
-1. Download **all archive parts** from [Releases](https://github.com/alexander474/kali-blueprint/releases). Sign in to see draft releases.
-2. Put the parts in the same folder and extract **`kali-blueprint.7z.001`** with 7-Zip.
-3. Open the extracted **`.vmx`** in VMware Workstation. Choose **I copied it** if asked.
-4. Adjust CPU and RAM below, then start the VM. Use the login in the release notes.
-5. Open a terminal and run **`passwd`** to change the initial password before connecting a lab VPN.
-
-New builds default to **alex / kali**, with hostname **lab**. The wallpaper is applied automatically. Change it through Xfce Settings whenever you like.
-
-## Pick your resources
+1. Download all archive parts from [Releases](https://github.com/alexander474/kali-blueprint/releases). Sign in to see drafts.
+2. Keep the parts in one folder and extract `kali-blueprint.7z.001` with 7-Zip.
+3. Open the `.vmx` in VMware. Choose **I copied it** if asked.
+4. Set CPU and RAM, then start the VM and log in using the release notes.
 
 | PC | CPUs | RAM |
 | --- | ---: | ---: |
 | Laptop | 4 | 8 GB |
 | Desktop | 8 | 12 GB |
 
-Set these in VMware while the VM is shut down. The virtual disk grows as needed, up to 150 GB.
+New builds use `alex / kali` on `lab`. Run `passwd` to change the password before using a lab VPN. The wallpaper is set automatically; change it through Xfce Settings.
 
-## Build a new image
+## Build
 
-Open **Actions → Kali Blueprint → Run workflow → main**. The finished image appears as a draft under Releases.
+Code changes merged into `main` start a build automatically. For a manual build, choose **Actions → Kali Blueprint → Run workflow → main**. The download appears as a draft under Releases.
 
-For different defaults, edit [blueprint.json](blueprint.json) before building. Development instructions are in [AGENTS.md](AGENTS.md).
+Defaults: [blueprint.json](blueprint.json). Development: [AGENTS.md](AGENTS.md).
 
-Independent project; not an official Kali image. Build integration: GPL-3.0-or-later. Kali Linux and its dragon logo are trademarks of OffSec.
+Independent project, not an official Kali image. GPL-3.0-or-later for the build integration. Kali Linux and its dragon logo are OffSec trademarks.

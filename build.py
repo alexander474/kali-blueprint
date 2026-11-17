@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Build a stock Kali/Xfce VMware image with a small personal configuration."""
 import argparse
 import ast
 import hashlib
@@ -177,7 +176,7 @@ def build():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description='Build a Kali VMware image.')
     parser.add_argument('--validate', action='store_true')
     args = parser.parse_args()
     try:

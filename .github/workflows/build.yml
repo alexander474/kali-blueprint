@@ -4,6 +4,12 @@ on:
   pull_request:
   push:
     branches: [main]
+    paths:
+      - build.py
+      - blueprint.json
+      - 'guest/**'
+      - '*.ps1'
+      - .github/workflows/build.yml
   workflow_dispatch:
 
 permissions:
@@ -18,7 +24,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
         with:
           persist-credentials: false
       - name: Validate source and configuration
@@ -34,14 +40,14 @@ jobs:
           }
 
   build:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: validate
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
         with:
           persist-credentials: false
       - name: Prepare the disposable build runner
