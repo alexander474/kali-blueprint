@@ -18,7 +18,7 @@ New builds use `alex / kali` on `lab`. Run `passwd` to change the password befor
 
 ## Build
 
-Choose **Actions → Kali Blueprint → Run workflow → main**. The download appears as a draft under Releases.
+Code changes merged into `main` start a build automatically. For a manual build, choose **Actions → Kali Blueprint → Run workflow → main**. The download appears as a draft under Releases.
 
 Defaults: [blueprint.json](blueprint.json). Development: [AGENTS.md](AGENTS.md).
 
