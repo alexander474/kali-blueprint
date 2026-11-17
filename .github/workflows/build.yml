@@ -61,4 +61,4 @@ jobs:
           tag="build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           gh release create "$tag" dist/* --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" --draft --title "Kali Blueprint $tag" \
-            --notes 'Built by GitHub Actions. Extract all archive parts together. Initial credentials: kali / kali; change the password before connecting a lab VPN. Native VMware, input-device, SSH and VPN checks remain local.'
+            --notes 'Built by GitHub Actions. Extract all archive parts together. The login name is configured in blueprint.json (default: alex); the public initial password is kali. Change it before connecting a lab VPN. Native VMware, input-device, SSH and VPN checks remain local.'

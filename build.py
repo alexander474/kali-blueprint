@@ -29,9 +29,11 @@ def configuration():
         raise ValueError('Unexpected or missing configuration fields; keep secrets local')
     if not re.fullmatch('[0-9a-f]{40}', config['upstream_commit']):
         raise ValueError('Pin the upstream recipe to a commit')
-    if config['username'] != 'kali':
-        raise ValueError('This image currently supports the standard kali user')
-    for field in ('hostname', 'keyboard', 'locale'):
+    if not re.fullmatch('[a-z][a-z0-9_-]{0,31}', config['username']) or config['username'] in {'root', 'nobody'}:
+        raise ValueError('Choose a non-root Linux username of 1 to 32 characters')
+    if not re.fullmatch('[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?', config['hostname']):
+        raise ValueError('Choose a lowercase hostname of 1 to 63 characters')
+    for field in ('keyboard', 'locale'):
         if not re.fullmatch('[A-Za-z0-9_.-]+', config[field]):
             raise ValueError('Invalid ' + field)
     if not re.fullmatch('[A-Za-z_+-]+/[A-Za-z_+-]+', config['timezone']):
@@ -58,9 +60,12 @@ def validate():
     configuration()
     for path in (ROOT / 'guest').glob('*.py'):
         ast.parse(path.read_text(), filename=str(path))
-    for required in ('configure.py', 'session.py', 'network.py', 'conky.conf'):
+    for required in ('configure.py', 'session.py', 'network.py', 'conky.conf', 'wallpaper.png'):
         if not (ROOT / 'guest' / required).is_file():
             raise ValueError('Missing runtime file: ' + required)
+    with (ROOT / 'guest/wallpaper.png').open('rb') as image:
+        if image.read(8) != b'\x89PNG\r\n\x1a\n':
+            raise ValueError('Bundled wallpaper must be PNG')
     print('Configuration and Python syntax are valid. No image was built.')
 
 
@@ -104,7 +109,7 @@ def build():
     runtime = overlay / 'usr/local/lib/kali-blueprint'
     runtime.mkdir(parents=True)
     for path in (ROOT / 'guest').iterdir():
-        if path.is_file() and path.suffix in ('.py', '.conf'):
+        if path.is_file() and path.suffix in ('.py', '.conf', '.png'):
             shutil.copyfile(path, runtime / path.name)
     settings = overlay / 'etc/kali-blueprint'
     settings.mkdir(parents=True)
@@ -125,6 +130,7 @@ def build():
     run(['bash', 'build-in-container.sh', '--variant', 'vmware', '--desktop', 'xfce',
          '--toolset', 'default', '--keyboard', config['keyboard'], '--timezone', config['timezone'],
          '--locale', config['locale'], '--hostname', config['hostname'], '--size', str(config['disk_gb']),
+         '--userpass', config['username'] + ':kali',
          '--packages', ','.join(config['extra_packages']), '--mirror', 'https://kali.download/kali',
          '--version', version, '--output', str(output)], cwd=upstream, env=env, timeout=12600)
     folders = list(output.glob('*.vmwarevm'))

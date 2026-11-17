@@ -1,7 +1,7 @@
 {
   "upstream_commit": "75a7de76f8fe30cd75b4a46633c4de893dfe19bc",
-  "hostname": "kali",
-  "username": "kali",
+  "hostname": "lab",
+  "username": "alex",
   "keyboard": "no",
   "timezone": "Europe/Oslo",
   "locale": "en_US.UTF-8",
