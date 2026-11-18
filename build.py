@@ -151,10 +151,17 @@ def build():
             del values[key]
     values.update(vmx_settings(config))
     vmx_files[0].write_text(''.join(f'{key} = "{value}"\n' for key, value in values.items()), encoding='utf-8')
-    shutil.copyfile(ROOT / 'Set-Profile.ps1', folder / 'Set-Profile.ps1')
-    shutil.copyfile(ROOT / 'Personalize.ps1', folder / 'Personalize.ps1')
-    shutil.copyfile(ROOT / 'blueprint.json', folder / 'blueprint.json')
-    shutil.copyfile(ROOT / 'README.md', folder / 'README.md')
+    if any(re.search(r'[/\\:]', value) for key, value in values.items() if key == 'nvram' or key.endswith('.fileName')):
+        raise ValueError('VMX refers to files outside the VM folder')
+    disks = [value for key, value in values.items() if re.fullmatch(r'(?:scsi|sata|nvme|ide)\d+:\d+\.fileName', key)]
+    for name in list(disks):
+        if not (folder / name).is_file():
+            raise ValueError('Missing VM disk: ' + name)
+        with (folder / name).open('rb') as disk:
+            extents = re.findall(rb'^(?:RW|RDONLY|NOACCESS) \d+ \w+ "([^"]+)"', disk.read(65536), re.M)
+        disks += [extent.decode() for extent in extents if extent.decode() != name]
+    if not disks or any(re.search(r'[/\\:]', name) or not (folder / name).is_file() for name in disks):
+        raise ValueError('Missing or external VM disk files')
     dist = ROOT / 'dist'
     dist.mkdir()
     archiver = shutil.which('7zz') or shutil.which('7z')
