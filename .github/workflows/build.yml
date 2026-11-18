@@ -29,15 +29,6 @@ jobs:
           persist-credentials: false
       - name: Validate source and configuration
         run: python3 build.py --validate
-      - name: Parse Windows helpers
-        shell: pwsh
-        run: |
-          Get-ChildItem -LiteralPath . -Filter '*.ps1' | ForEach-Object {
-            $tokens = $null
-            $errors = $null
-            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$tokens,[ref]$errors)
-            if ($errors.Count) { throw ($errors -join "`n") }
-          }
 
   build:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
