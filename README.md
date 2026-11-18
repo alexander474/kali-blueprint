@@ -4,19 +4,16 @@ A Kali Linux VM for VMware, with Xfce, standard Kali tools, Norwegian keyboard a
 
 ## Start
 
-1. Download all archive parts and `SHA256SUMS` from [Releases](https://github.com/alexander474/kali-blueprint/releases). Sign in to see drafts. The parts should match `SHA256SUMS` (`Get-FileHash`).
-2. Keep the parts in one folder and extract `kali-blueprint.7z.001` with 7-Zip.
-3. Open the `.vmx` in VMware Workstation Pro 25H2 or newer (virtual hardware 22). Choose **I copied it** if asked.
-4. The VM starts with the Desktop profile. On the laptop, select Work before the first start.
+1. Download all archive parts from [Releases](https://github.com/alexander474/kali-blueprint/releases). Sign in to see drafts.
+2. Keep the parts in one folder and extract `kali-blueprint.7z.001` with 7-Zip or another 7z tool.
+3. Open the `.vmx` in VMware Workstation Pro 25H2 or newer (virtual hardware 22) on a 64-bit x86 (amd64) PC. Choose **I copied it** if asked.
+4. Start Kali.
 
-| PC | Profile | CPUs | RAM |
-| --- | --- | ---: | ---: |
-| Laptop (work) | Work | 4 | 8 GB |
-| Desktop | Desktop | 8 | 12 GB |
+The release also has `SHA256SUMS`; each part's SHA-256 hash should match it before extraction.
 
-To change profile, shut Kali down completely (not suspended), close its VMware tab and run `.\Set-Profile.ps1 -Vmx <name>.vmx -Profile Work` (or `Desktop`) in the VM folder. It changes only CPU and RAM and keeps a backup of the `.vmx`.
+Kali logs in `alex` on `lab` automatically. The public password `kali` is needed for `sudo`; run `passwd` to change it before personal use or a lab VPN. The tools and VMware guest tools are installed, and the desktop is set up at the first login; change the wallpaper through Xfce Settings.
 
-New builds log in `alex` on `lab` automatically. The public password `kali` is needed for `sudo`; run `passwd` to change it before using a lab VPN. The wallpaper is set at the first login; change it through Xfce Settings.
+The VM has 8 CPUs and 12 GB RAM. On a smaller PC, shut Kali down and lower them in VMware's VM settings.
 
 ## Build
 
