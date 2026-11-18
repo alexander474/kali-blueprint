@@ -1,10 +1,14 @@
 # Kali Blueprint
 
+[![Kali Rolling](https://img.shields.io/badge/Kali-Rolling-557C94?logo=kalilinux&logoColor=white)](https://www.kali.org/)
+[![Build](https://github.com/alexander474/kali-blueprint/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/alexander474/kali-blueprint/actions/workflows/build.yml)
+[![Release](https://img.shields.io/github/v/release/alexander474/kali-blueprint?label=release)](https://github.com/alexander474/kali-blueprint/releases/latest)
+
 A Kali Linux VM for VMware, with Xfce, standard Kali tools, Norwegian keyboard and a custom desktop.
 
 ## Start
 
-1. Download all archive parts from [Releases](https://github.com/alexander474/kali-blueprint/releases). Sign in to see drafts.
+1. Download all archive parts from the [latest release](https://github.com/alexander474/kali-blueprint/releases/latest).
 2. Keep the parts in one folder and extract `kali-blueprint.7z.001` with 7-Zip or another 7z tool.
 3. Open the `.vmx` in VMware Workstation Pro 25H2 or newer (virtual hardware 22) on a 64-bit x86 (amd64) PC. Choose **I copied it** if asked.
 4. Start Kali.
