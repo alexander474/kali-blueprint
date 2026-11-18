@@ -5,12 +5,15 @@ param(
 $ErrorActionPreference = 'Stop'
 $vmxPath = (Resolve-Path -LiteralPath $Vmx).Path
 if ([IO.Path]::GetExtension($vmxPath) -ne '.vmx') { throw 'Select a VMware VMX file' }
-if (Test-Path -LiteralPath ($vmxPath + '.lck')) { throw 'Shut down Kali and close its VMware tab first' }
+$text = [IO.File]::ReadAllText($vmxPath)
+$suspended = [regex]::Match($text,'(?m)^checkpoint\.vmState\s*=\s*"([^"]*)"').Groups[1].Value
+if ((Test-Path -LiteralPath ($vmxPath + '.lck')) -or $suspended -or (Get-ChildItem -LiteralPath (Split-Path -LiteralPath $vmxPath) -Filter '*.vmss')) {
+    throw 'Kali is running or suspended. Resume it in VMware, shut it down completely and close its tab first'
+}
 $config = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'blueprint.json') -Raw | ConvertFrom-Json
 $selected = $config.profiles.$Profile
 if ($null -eq $selected -or [int]$selected.cpus -lt 1 -or [int]$selected.memory_mb -lt 2048) { throw 'Invalid resource profile' }
 $values = @{numvcpus=[string]$selected.cpus;'cpuid.coresPerSocket'=[string]$selected.cpus;memsize=[string]$selected.memory_mb}
-$text = [IO.File]::ReadAllText($vmxPath)
 $updated = $text
 foreach ($name in $values.Keys) {
     $pattern = '(?m)^' + [regex]::Escape($name) + '\s*=.*$'
