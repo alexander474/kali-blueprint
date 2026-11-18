@@ -10,11 +10,27 @@ import sys
 import time
 
 RUNTIME = Path(__file__).resolve().parent
+SHORTCUTS = 'xfce4-keyboard-shortcuts'
+PRINT = '/commands/custom/Print'
+PRINT_DEFAULTS = {'xfce4-screenshooter', 'xfce4-screenshooter -f', '/usr/share/kali-themes/xfce4-screenshooter'}
 
 
 def command(args, *, capture=False):
     result = subprocess.run(args, check=True, timeout=20, text=True, capture_output=capture)
     return result.stdout if capture else None
+
+
+def poll(read):
+    for attempt in range(8):
+        try:
+            value = read()
+        except subprocess.SubprocessError:
+            value = None
+        if value:
+            return value
+        if attempt < 7:
+            time.sleep(1)
+    return None
 
 
 def managed(path, content, state):
@@ -35,40 +51,82 @@ def managed(path, content, state):
     state[key] = digest
 
 
+def load_state(path):
+    if not path.exists():
+        return {}
+    data = path.read_bytes()
+    try:
+        state = json.loads(data)
+    except ValueError:
+        state = None
+    if isinstance(state, dict):
+        return state
+    backup = path.with_name(path.name + '.invalid-' + hashlib.sha256(data).hexdigest()[:12])
+    if not backup.exists():
+        shutil.copyfile(path, backup)
+    print(f'Invalid {path.name} kept as {backup.name}; one-time settings are not repeated', file=sys.stderr)
+    return {'bundled_wallpaper_applied': True, 'print_shortcut': True}
+
+
+def flameshot_settings(path):
+    config = configparser.ConfigParser(interpolation=None)
+    config.optionxform = str
+    if path.exists():
+        with path.open(encoding='utf-8') as stream:
+            config.read_file(stream)
+    if config.has_option('General', 'useX11LegacyScreenshot'):
+        return
+    if not config.has_section('General'):
+        config.add_section('General')
+    config.set('General', 'useX11LegacyScreenshot', 'true')
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        backup = path.with_name(path.name + '.before-' + hashlib.sha256(path.read_bytes()).hexdigest()[:12])
+        if not backup.exists():
+            shutil.copyfile(path, backup)
+    with path.open('w', encoding='utf-8') as stream:
+        config.write(stream, space_around_delimiters=False)
+
+
+def shortcut_properties():
+    props = command(['xfconf-query', '-c', SHORTCUTS, '-l'], capture=True).splitlines()
+    override = '/commands/custom/override'
+    if override in props and command(['xfconf-query', '-c', SHORTCUTS, '-p', override], capture=True).strip() == 'true':
+        return props
+    return None
+
+
+def print_shortcut(state):
+    props = poll(shortcut_properties)
+    if not props:
+        raise ValueError('Xfce shortcuts are not initialized')
+    if PRINT in props:
+        if command(['xfconf-query', '-c', SHORTCUTS, '-p', PRINT], capture=True).strip() not in PRINT_DEFAULTS:
+            state['print_shortcut'] = True
+            return
+    elif state.get('print_shortcut'):
+        return
+    command(['xfconf-query', '-c', SHORTCUTS, '-p', PRINT, '-n', '-t', 'string', '-s', 'flameshot gui'])
+    state['print_shortcut'] = True
+
+
 def wallpaper(path):
-    path = path.expanduser().resolve(strict=True)
-    if not path.is_file() or path.stat().st_size > 32 * 1024**2 or path.suffix.lower() not in {'.png', '.jpg', '.jpeg'}:
-        raise ValueError('Choose a local PNG or JPEG wallpaper')
-    with path.open('rb') as stream:
-        header = stream.read(8)
-    if not (header == b'\x89PNG\r\n\x1a\n' or header.startswith(b'\xff\xd8\xff')):
-        raise ValueError('Wallpaper content must be PNG or JPEG')
-    targets = []
-    for attempt in range(8):
-        try:
-            props = command(['xfconf-query', '-c', 'xfce4-desktop', '-l'], capture=True).splitlines()
-            targets = [item for item in props if item.endswith('/last-image') and '/backdrop/' in item]
-        except subprocess.CalledProcessError:
-            targets = []
-        if targets:
-            break
-        if attempt < 7:
-            time.sleep(1)
-    if not targets:
+    path = path.resolve(strict=True)
+
+    def targets():
+        props = command(['xfconf-query', '-c', 'xfce4-desktop', '-l'], capture=True).splitlines()
+        return [item for item in props if item.endswith('/last-image') and '/backdrop/' in item]
+
+    found = poll(targets)
+    if not found:
         raise ValueError('No active Xfce wallpaper properties; keep the existing background')
-    for prop in targets:
+    for prop in found:
         command(['xfconf-query', '-c', 'xfce4-desktop', '-p', prop, '-s', str(path)])
     command(['xfdesktop', '--reload'])
 
 
-def apply_background(home, state):
-    personal = home / '.config/kali-blueprint/personal.json'
-    if personal.exists():
-        settings = json.loads(personal.read_text())
-        if set(settings) != {'wallpaper'}:
-            raise ValueError('Personal settings currently support only a local wallpaper path')
-        wallpaper(Path(settings['wallpaper']))
-    elif not state.get('bundled_wallpaper_applied', False):
+def apply_background(state):
+    if not state.get('bundled_wallpaper_applied', False):
         wallpaper(RUNTIME / 'wallpaper.png')
         state['bundled_wallpaper_applied'] = True
 
@@ -78,35 +136,19 @@ def main():
         raise SystemExit('Run as the logged-in Xfce user, not root')
     home = Path.home()
     statepath = home / '.local/state/kali-blueprint/managed.json'
-    state = json.loads(statepath.read_text()) if statepath.exists() else {}
+    state = load_state(statepath)
     conky = home / '.config/conky/kali-blueprint.conf'
-    managed(conky, (RUNTIME / 'conky.conf').read_text(), state)
-    flameshot = home / '.config/flameshot/flameshot.ini'
-    flameshot.parent.mkdir(parents=True, exist_ok=True)
-    config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str
-    if flameshot.exists():
-        config.read(flameshot)
-    if not config.has_section('General'):
-        config.add_section('General')
-    if not config.has_option('General', 'useX11LegacyScreenshot'):
-        config.set('General', 'useX11LegacyScreenshot', 'true')
-        if flameshot.exists():
-            backup = flameshot.with_name(flameshot.name + '.before-' + hashlib.sha256(flameshot.read_bytes()).hexdigest()[:12])
-            if not backup.exists():
-                shutil.copyfile(flameshot, backup)
-        with flameshot.open('w') as stream:
-            config.write(stream, space_around_delimiters=False)
-    shortcut = '/commands/custom/Print'
-    existing = subprocess.run(['xfconf-query', '-c', 'xfce4-keyboard-shortcuts', '-p', shortcut],
-                              capture_output=True, text=True, timeout=10)
-    if existing.returncode != 0 or existing.stdout.strip() in {'xfce4-screenshooter', 'xfce4-screenshooter -f'}:
-        command(['xfconf-query', '-c', 'xfce4-keyboard-shortcuts', '-p', shortcut,
-                 '-n', '-t', 'string', '-s', 'flameshot gui'])
-    try:
-        apply_background(home, state)
-    except (OSError, ValueError, subprocess.SubprocessError) as error:
-        print(f'Wallpaper setup deferred: {error}', file=sys.stderr)
+    steps = (
+        ('Conky configuration', lambda: managed(conky, (RUNTIME / 'conky.conf').read_text(), state)),
+        ('Flameshot configuration', lambda: flameshot_settings(home / '.config/flameshot/flameshot.ini')),
+        ('Print shortcut', lambda: print_shortcut(state)),
+        ('Wallpaper', lambda: apply_background(state)),
+    )
+    for name, step in steps:
+        try:
+            step()
+        except (OSError, ValueError, configparser.Error, subprocess.SubprocessError) as error:
+            print(f'{name} unchanged: {error}', file=sys.stderr)
     statepath.parent.mkdir(parents=True, exist_ok=True)
     statepath.write_text(json.dumps(state, indent=2) + '\n')
     running = subprocess.run(['pgrep', '-u', str(os.getuid()), '-x', 'conky'],

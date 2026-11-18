@@ -152,7 +152,6 @@ def build():
     values.update(vmx_settings(config))
     vmx_files[0].write_text(''.join(f'{key} = "{value}"\n' for key, value in values.items()), encoding='utf-8')
     shutil.copyfile(ROOT / 'Set-Profile.ps1', folder / 'Set-Profile.ps1')
-    shutil.copyfile(ROOT / 'Personalize.ps1', folder / 'Personalize.ps1')
     shutil.copyfile(ROOT / 'blueprint.json', folder / 'blueprint.json')
     shutil.copyfile(ROOT / 'README.md', folder / 'README.md')
     dist = ROOT / 'dist'

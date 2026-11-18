@@ -4,17 +4,19 @@ A Kali Linux VM for VMware, with Xfce, standard Kali tools, Norwegian keyboard a
 
 ## Start
 
-1. Download all archive parts from [Releases](https://github.com/alexander474/kali-blueprint/releases). Sign in to see drafts.
+1. Download all archive parts and `SHA256SUMS` from [Releases](https://github.com/alexander474/kali-blueprint/releases). Sign in to see drafts. The parts should match `SHA256SUMS` (`Get-FileHash`).
 2. Keep the parts in one folder and extract `kali-blueprint.7z.001` with 7-Zip.
-3. Open the `.vmx` in VMware. Choose **I copied it** if asked.
-4. Set CPU and RAM, then start the VM and log in using the release notes.
+3. Open the `.vmx` in VMware Workstation Pro 25H2 or newer (virtual hardware 22). Choose **I copied it** if asked.
+4. The VM starts with the Desktop profile. On the laptop, select Work before the first start.
 
-| PC | CPUs | RAM |
-| --- | ---: | ---: |
-| Laptop | 4 | 8 GB |
-| Desktop | 8 | 12 GB |
+| PC | Profile | CPUs | RAM |
+| --- | --- | ---: | ---: |
+| Laptop (work) | Work | 4 | 8 GB |
+| Desktop | Desktop | 8 | 12 GB |
 
-New builds use `alex / kali` on `lab`. Run `passwd` to change the password before using a lab VPN. The wallpaper is set automatically; change it through Xfce Settings.
+To change profile, shut Kali down completely (not suspended), close its VMware tab and run `.\Set-Profile.ps1 -Vmx <name>.vmx -Profile Work` (or `Desktop`) in the VM folder. It changes only CPU and RAM and keeps a backup of the `.vmx`.
+
+New builds log in `alex` on `lab` automatically. The public password `kali` is needed for `sudo`; run `passwd` to change it before using a lab VPN. The wallpaper is set at the first login; change it through Xfce Settings.
 
 ## Build
 

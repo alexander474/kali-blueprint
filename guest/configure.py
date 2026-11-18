@@ -14,7 +14,7 @@ def main():
     home = Path(account.pw_dir)
     for relative in ('Kali', 'Kali/notes', 'Kali/work', 'Kali/evidence',
                      'Pictures', 'Pictures/Wallpapers', '.config',
-                     '.config/autostart', '.config/kali-blueprint'):
+                     '.config/autostart'):
         path = home / relative
         path.mkdir(parents=True, exist_ok=True)
         path.chmod(0o700)
