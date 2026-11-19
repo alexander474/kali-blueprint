@@ -113,15 +113,16 @@ def print_shortcut(state):
 def wallpaper(path):
     path = path.resolve(strict=True)
 
-    def targets():
-        props = command(['xfconf-query', '-c', 'xfce4-desktop', '-l'], capture=True).splitlines()
-        return [item for item in props if item.endswith('/last-image') and '/backdrop/' in item]
+    def monitors():
+        lines = command(['xrandr', '--listactivemonitors'], capture=True).splitlines()[1:]
+        return [line.split()[-1] for line in lines if line.strip()]
 
-    found = poll(targets)
+    found = poll(monitors)
     if not found:
-        raise ValueError('No active Xfce wallpaper properties; keep the existing background')
-    for prop in found:
-        command(['xfconf-query', '-c', 'xfce4-desktop', '-p', prop, '-s', str(path)])
+        raise ValueError('No active monitors; keep the existing background')
+    for name in found:
+        command(['xfconf-query', '-c', 'xfce4-desktop', '-p', f'/backdrop/screen0/monitor{name}/workspace0/last-image',
+                 '-n', '-t', 'string', '-s', str(path)])
     command(['xfdesktop', '--reload'])
 
 
